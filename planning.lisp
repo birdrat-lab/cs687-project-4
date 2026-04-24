@@ -254,15 +254,35 @@ plus a pointer to the start operator and to the goal operator."
 
 
 (defun before-p (operator1 operator2 plan)
+(reachable plan operator1 operator2)
   "Operator1 is ordered before operator2 in plan?"
 ;;; perhaps you have an existing function which could help here.
   )
 
 
 (defun link-exists-for-precondition-p (precond operator plan)
+ (let* (
+  (name (operator-name operator))
+  ;(plan-length (length (plan-operators plan)))
+  (plan-length (length (plan-links plan)))
+  (i 0))
+ (loop while (< i plan-length)
+do
+(print (list "precondition" (link-precond (elt (plan-links plan) i))))
+(print (list "operator" (link-from (elt (plan-links plan) i))))
+(if (and (eq precond (link-precond (elt (plan-links plan) i))) (eq operator (link-from (elt (plan-links plan) i))))
+(print "true")
+(print "false")
+)
+(incf i)
+)
+; (print "AA")
+; (print (operator-uniq (link-from (elt (plan-links plan) 0))))
+ )
+)
   "T if there's a link for the precond for a given operator, else nil.
 precond is a predicate."
-  )
+  
 
 
 (defun operator-threatens-link-p (operator link plan)
@@ -415,6 +435,29 @@ solved plan.  Returns the solved plan, else nil if no solved plan."
     (dolist (effect (operator-effects operator))
       (push operator (gethash effect *operators-for-precond*)))))
 
+(defun do-pop-test ()
+  (let* ((start (make-operator
+                 :name 'start
+                 :uniq (gensym)
+                 :preconditions nil
+                 :effects *start-effects*))
+         (goal (make-operator
+                :name 'goal
+                :uniq (gensym)
+                :preconditions *goal-preconditions*
+                :effects nil))
+         (plan (make-plan
+                :operators (list start goal)
+                :orderings (list (cons start goal))
+                :links nil
+                :start start
+                :goal goal)))
+               ; (operator-name (elt (plan-operators plan) 1))
+             ; (make-link :from (elt (plan-operators plan) 1) :precond (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) :to (elt (plan-operators plan) 0))
+              (setf (plan-links plan) (list (make-link :from (elt (plan-operators plan) 1) :precond (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) :to (elt (plan-operators plan) 0))))
+               ;(print (elt (operator-preconditions (elt (plan-operators plan) 1)) 2))
+                (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) (elt (plan-operators plan) 1) plan)
+                ))
 
 (defun do-pop ()
   (let* ((start (make-operator
@@ -778,4 +821,3 @@ doesn't matter really -- but NOT including a goal or start operator")
 ;;   undefined variable: *START-EFFECTS*
 
 ;; ... I really oughta rearrange the code so these go away.  :-)
-
