@@ -268,14 +268,14 @@ plus a pointer to the start operator and to the goal operator."
   (i 0))
  (loop while (< i plan-length)
 do
-(print (list "precondition" (link-precond (elt (plan-links plan) i))))
-(print (list "operator" (link-from (elt (plan-links plan) i))))
+;(print (list "precondition" (link-precond (elt (plan-links plan) i))))
+;(print (list "operator" (link-from (elt (plan-links plan) i))))
 (if (and (eq precond (link-precond (elt (plan-links plan) i))) (eq operator (link-from (elt (plan-links plan) i))))
-(print "true")
-(print "false")
+(return-from link-exists-for-precondition-p T)
 )
 (incf i)
 )
+NIL
 ; (print "AA")
 ; (print (operator-uniq (link-from (elt (plan-links plan) 0))))
  )
@@ -297,13 +297,34 @@ or before the link, and it's got an effect which counters the link's effect."
   )
 
 (defun pick-precond (plan)
+ (let* (
+  (plan-length (length (plan-operators plan)))
+    (i 0)
+    (j 0)
+    )
+ (loop while (< i plan-length)
+  do
+  (setf j 0)
+    ;(print (elt (plan-operators plan) i))
+    (if (> (length (operator-preconditions (elt (plan-operators plan) i))) 0)
+    (loop while (< j (+ 1 plan-length))
+    do
+   ; (print (elt (operator-preconditions (elt (plan-operators plan) i)) j))
+    (if (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) i)) j) (elt (plan-operators plan) i) plan)
+    (return-from pick-precond (elt (operator-preconditions (elt (plan-operators plan) i)) j))
+    )
+    (incf j)))
+(incf i))
+))
+
+
   "Return ONE (operator . precondition) pair in the plan that has not been met yet.
 If there is no such pair, return nil"
 ;;; SPEED HINT.  Any precondition will work.  But this is an opportunity
 ;;; to pick a smart one.  Perhaps you might select the precondition
 ;;; which has the fewest possible operators which solve it, so it fails
 ;;; the fastest if it's wrong. 
-  )
+  
 
 (defun all-effects (precondition plan)
   "Given a precondition, returns a list of ALL operators presently IN THE PLAN which have
@@ -456,7 +477,8 @@ solved plan.  Returns the solved plan, else nil if no solved plan."
              ; (make-link :from (elt (plan-operators plan) 1) :precond (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) :to (elt (plan-operators plan) 0))
               (setf (plan-links plan) (list (make-link :from (elt (plan-operators plan) 1) :precond (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) :to (elt (plan-operators plan) 0))))
                ;(print (elt (operator-preconditions (elt (plan-operators plan) 1)) 2))
-                (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) (elt (plan-operators plan) 1) plan)
+               ; (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) (elt (plan-operators plan) 1) plan)
+                (pick-precond plan)
                 ))
 
 (defun do-pop ()
