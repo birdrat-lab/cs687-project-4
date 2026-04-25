@@ -336,11 +336,28 @@ effects which can achieve this precondition."
   )
 
 (defun all-operators (precondition)
+(let* ((operators (list)))
+(mapcar #'(lambda(x) (let* ((i 0))
+(loop while (< i (length (operator-preconditions x)))
+do 
+;(print (list precondition (elt (operator-preconditions x) i)))
+(if (equal precondition (elt (operator-preconditions x) i))
+(progn
+(setf operators (append operators (list x)))
+))
+(incf i)
+)))*operators*) operators))
+
+
+;(print (elt x i))
+;(if (eq precondition (elt x i))
+;(setf found NIL)
+
   "Given a precondition, returns all list of ALL operator templates which have
 an effect that can achieve this precondition."
   ;; hint: there's short, efficient way to do this, and a long,
   ;; grotesquely inefficient way.  Don't do the inefficient way.
-  )
+  
 
 (defun select-subgoal (plan current-depth max-depth)
 (print "select-subgoal")
@@ -368,15 +385,13 @@ on them.  Returns a solved plan, else nil if not solved."
   )
 
 (defun add-operator (operator plan)
-;(print plan)
 (setf plan (copy-plan plan))
 (pushnew (list operator) (plan-operators plan))
-;(print "AAAA1")
 ;(print (car (elt (plan-orderings plan) 0)))
 (pushnew (cons (car (elt (plan-orderings plan) 0)) operator) (plan-orderings plan))
 (pushnew (cons operator (cdr (elt (plan-orderings plan) 1))) (plan-orderings plan))
 (print plan)
-;(print "AAAA2"))
+
 
 )
 ;(mapcar #'(lambda (ordering)
