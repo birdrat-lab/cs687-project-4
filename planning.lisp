@@ -329,11 +329,24 @@ If there is no such pair, return nil"
   
 
 (defun all-effects (precondition plan)
+(print precondition)
+(let* ((operators (list)))
+(mapcar #'(lambda(x) (let* ((i 0))
+(loop while (< i (length (operator-effects x)))
+do 
+;(print (list precondition (elt (operator-preconditions x) i)))
+(if (equal precondition (elt (operator-effects x) i))
+(progn
+(setf operators (append operators (list x)))
+))
+(incf i)
+)))(plan-operators plan)) operators))
+
   "Given a precondition, returns a list of ALL operators presently IN THE PLAN which have
 effects which can achieve this precondition."
   ;; hint: there's short, efficient way to do this, and a long,
   ;; grotesquely inefficient way.  Don't do the inefficient way.
-  )
+  
 
 (defun all-operators (precondition)
 (let* ((operators (list)))
@@ -341,7 +354,7 @@ effects which can achieve this precondition."
 (loop while (< i (length (operator-preconditions x)))
 do 
 ;(print (list precondition (elt (operator-preconditions x) i)))
-(if (equal precondition (elt (operator-preconditions x) i))
+(if (equal precondition (elt (operator-effects x) i))
 (progn
 (setf operators (append operators (list x)))
 ))
@@ -520,6 +533,7 @@ solved plan.  Returns the solved plan, else nil if no solved plan."
                ; (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) (elt (plan-operators plan) 1) plan)
                 ;(pick-precond plan)
                 (add-operator (copy-operator (elt (plan-operators plan) 1)) plan)
+                (all-effects '(t a-on-table) plan)
                 ;(select-subgoal plan 1 1)
                 ))
 
