@@ -310,12 +310,14 @@ or before the link, and it's got an effect which counters the link's effect."
     (loop while (< j (+ 1 plan-length))
     do
    ; (print (elt (operator-preconditions (elt (plan-operators plan) i)) j))
-    (if (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) i)) j) (elt (plan-operators plan) i) plan)
-    (return-from pick-precond (elt (operator-preconditions (elt (plan-operators plan) i)) j))
+    (if (not (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) i)) j) (elt (plan-operators plan) i) plan))
+    (return-from pick-precond (cons (elt (plan-operators plan) i) (elt (operator-preconditions (elt (plan-operators plan) i)) j)))
     )
     (incf j)))
 (incf i))
-))
+)
+NIL
+)
 
 
   "Return ONE (operator . precondition) pair in the plan that has not been met yet.
@@ -341,6 +343,10 @@ an effect that can achieve this precondition."
   )
 
 (defun select-subgoal (plan current-depth max-depth)
+(print "select-subgoal")
+(print (pick-precond plan))
+(choose-operator (pick-precond plan) plan current-depth max-depth)
+
   "For all possible subgoals, recursively calls choose-operator
 on those subgoals.  Returns a solved plan, else nil if not solved."
           ;;; an enterprising student noted that the book says you DON'T have
@@ -352,6 +358,9 @@ on those subgoals.  Returns a solved plan, else nil if not solved."
 
 
 (defun choose-operator (op-precond-pair plan current-depth max-depth)
+(print (list "choose-operator" op-precond-pair))
+;(copy-operator operator)
+;(copy-plan plan)
   "For a given (operator . precondition) pair, recursively call
 hook-up-operator for all possible operators in the plan.  If that
 doesn't work, recursively call add operators and call hook-up-operators
@@ -359,6 +368,22 @@ on them.  Returns a solved plan, else nil if not solved."
   )
 
 (defun add-operator (operator plan)
+;(print plan)
+(setf plan (copy-plan plan))
+(pushnew (list operator) (plan-operators plan))
+;(print "AAAA1")
+;(print (car (elt (plan-orderings plan) 0)))
+(pushnew (cons (car (elt (plan-orderings plan) 0)) operator) (plan-orderings plan))
+(pushnew (cons operator (cdr (elt (plan-orderings plan) 1))) (plan-orderings plan))
+(print plan)
+;(print "AAAA2"))
+
+)
+;(mapcar #'(lambda (ordering)
+;                      (print-ordering ordering nil 0))
+;                  (plan-orderings plan))
+
+
   "Given an OPERATOR and a PLAN makes a copy of the plan [the
 operator should have already been copied out of its template at this point].
 Then adds that copied operator
@@ -368,7 +393,7 @@ after start and before goal.  Returns the modified copy of the plan."
   ;;; also hint: use PUSHNEW to add stuff but not duplicates
   ;;; Don't use PUSHNEW everywhere instead of PUSH, just where it
   ;;; makes specific sense.
-  )
+  
 
 (defun hook-up-operator (from to precondition plan
                          current-depth max-depth
@@ -478,7 +503,9 @@ solved plan.  Returns the solved plan, else nil if no solved plan."
               (setf (plan-links plan) (list (make-link :from (elt (plan-operators plan) 1) :precond (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) :to (elt (plan-operators plan) 0))))
                ;(print (elt (operator-preconditions (elt (plan-operators plan) 1)) 2))
                ; (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) (elt (plan-operators plan) 1) plan)
-                (pick-precond plan)
+                ;(pick-precond plan)
+                (add-operator (copy-operator (elt (plan-operators plan) 1)) plan)
+                ;(select-subgoal plan 1 1)
                 ))
 
 (defun do-pop ()
