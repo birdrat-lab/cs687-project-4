@@ -392,25 +392,37 @@ on those subgoals.  Returns a solved plan, else nil if not solved."
 
 (defun choose-operator (op-precond-pair plan current-depth max-depth)
 (print plan)
-;(let* ((operators (all-effects (cdr op-precond-pair) plan))
-(let* ((operators (all-operators (cdr op-precond-pair)))
-(i 0))
-(if operators
-(loop while (< i (length operators))
-do
-(hook-up-operator (elt operators i) (car op-precond-pair) (cdr op-precond-pair) plan
-                         10 10 NIL)
-(incf i)
-)
-)
-)
+
+(let* ((completed-plan NIL))
+;  (let* ((operators (all-effects (cdr op-precond-pair) plan))
+;  (i 0))
+;  (if operators
+;    (loop while (and (< i (length operators)) (not completed-plan))
+;      do
+;      (setf completed-plan (hook-up-operator (elt operators i) (car op-precond-pair) (cdr op-precond-pair) plan
+;                         10 10 NIL))
+;      (incf i))))
+
+  (let* ((operator NIL)
+  (operators (all-operators (cdr op-precond-pair)))
+  (i 0))
+  (if operators
+    (loop while (and (< i (length operators)) (not completed-plan))
+    do
+      (setf operator (copy-operator (elt operators i)))
+      (setf plan (add-operator operator plan))
+      ;(setf completed-plan (hook-up-operator (elt operators i) (car op-precond-pair) (cdr op-precond-pair) plan
+      ;                   10 10 NIL))
+      (setf completed-plan (hook-up-operator operator (car op-precond-pair) (cdr op-precond-pair) plan
+                         10 10 NIL))
+      (incf i))))))
 ;(defun hook-up-operator (from to precondition plan
 ;                         current-depth max-depth
 ;                         new-operator-was-added)
 ;(let* ((operators (all-operators (cdr op-precond-pair))))
 ;(print (list "choose-operator" op-precond-pair))
 ;(print operators)
-)
+
 ;(copy-operator operator)
 ;(copy-plan plan)
   "For a given (operator . precondition) pair, recursively call
@@ -427,7 +439,7 @@ on them.  Returns a solved plan, else nil if not solved."
 (pushnew (cons operator (cdr (elt (plan-orderings plan) 1))) (plan-orderings plan))
 ;(print plan)
 
-
+plan
 )
 ;(mapcar #'(lambda (ordering)
 ;                      (print-ordering ordering nil 0))
