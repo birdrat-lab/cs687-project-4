@@ -398,7 +398,7 @@ on those subgoals.  Returns a solved plan, else nil if not solved."
 (if operators
 (loop while (< i (length operators))
 do
-(hook-up-operator (elt operators i) (car op-precond-pair) (car op-precond-pair) plan
+(hook-up-operator (elt operators i) (car op-precond-pair) (cdr op-precond-pair) plan
                          10 10 NIL)
 (incf i)
 )
@@ -554,15 +554,15 @@ solved plan.  Returns the solved plan, else nil if no solved plan."
                 :start start
                 :goal goal)))
                ; (operator-name (elt (plan-operators plan) 1))
-             
-   ;(hook-up-operator (elt (plan-operators plan) 1) (elt (plan-operators plan) 0) (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) plan
-    ;                     10 10 NIL)
+             (print plan)
+  ; (hook-up-operator (elt (plan-operators plan) 1) (elt (plan-operators plan) 0) (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) plan
+   ;                      10 10 NIL)
 
                ;(print (elt (operator-preconditions (elt (plan-operators plan) 1)) 2))
                ; (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) (elt (plan-operators plan) 1) plan)
                 ;(pick-precond plan)
-                (add-operator (copy-operator (elt (plan-operators plan) 1)) plan)
-                (all-effects '(t a-on-table) plan)
+                ;(add-operator (copy-operator (elt (plan-operators plan) 1)) plan)
+                ;(all-effects '(t a-on-table) plan)
                 (select-subgoal plan 1 1)
                 ))
 
