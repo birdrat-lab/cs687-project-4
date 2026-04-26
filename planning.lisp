@@ -270,8 +270,9 @@ plus a pointer to the start operator and to the goal operator."
 do
 ;(print (list "precondition" (link-precond (elt (plan-links plan) i))))
 ;(print (list "operator" (link-from (elt (plan-links plan) i))))
-(if (and (eq precond (link-precond (elt (plan-links plan) i))) (eq operator (link-from (elt (plan-links plan) i))))
-(return-from link-exists-for-precondition-p T)
+(if (and (eq precond (link-precond (elt (plan-links plan) i))) (eq operator (link-to (elt (plan-links plan) i))))
+(progn
+(return-from link-exists-for-precondition-p T))
 )
 (incf i)
 )
@@ -391,7 +392,7 @@ on those subgoals.  Returns a solved plan, else nil if not solved."
 
 
 (defun choose-operator (op-precond-pair plan current-depth max-depth)
-(print plan)
+;(print plan)
 
 (let* ((completed-plan NIL))
 ;  (let* ((operators (all-effects (cdr op-precond-pair) plan))
@@ -416,9 +417,7 @@ on those subgoals.  Returns a solved plan, else nil if not solved."
       (setf completed-plan (hook-up-operator operator (car op-precond-pair) (cdr op-precond-pair) plan
                          10 10 NIL))
       (incf i))))))
-;(defun hook-up-operator (from to precondition plan
-;                         current-depth max-depth
-;                         new-operator-was-added)
+
 ;(let* ((operators (all-operators (cdr op-precond-pair))))
 ;(print (list "choose-operator" op-precond-pair))
 ;(print operators)
@@ -461,10 +460,9 @@ after start and before goal.  Returns the modified copy of the plan."
                          current-depth max-depth
                          new-operator-was-added)
 ;(pushnew  (list (make-link :from (elt (plan-operators plan) 1) :precond (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) :to (elt (plan-operators plan) 0))) (plan-links plan) )
-(setf plan (copy-plan plan))
-(pushnew  (list (make-link :from from :precond precondition :to to)) (plan-links plan) )
+(pushnew  (make-link :from from :precond precondition :to to) (plan-links plan) )
 (pushnew (cons from to) (plan-orderings plan))     
-(print plan)
+;(print plan)
   "Hooks up an operator called FROM, adding the links and orderings to the operator
 TO for the given PRECONDITION that FROM achieves for TO.  Then
 recursively  calls resolve-threats to fix any problems.  Presumes that
@@ -479,6 +477,28 @@ plan, else nil if not solved."
   )
 
 (defun threats (plan maybe-threatening-operator maybe-threatened-link)
+(let* ((links (plan-links plan))
+(i 0)
+(j 0)
+(threats (list)))
+;(print maybe-threatening-operator)
+;(print plan)
+;(print (list "links" (length links)))
+(if maybe-threatening-operator
+(loop while (< i (length links))
+do
+
+(loop while (< j (length (operator-effects maybe-threatening-operator)))
+do
+;(print (list (link-precond (elt links i)) (elt (operator-effects maybe-threatening-operator) j)))
+(if (equal (link-precond (elt links i)) (negate (elt (operator-effects maybe-threatening-operator) j)))
+(progn 
+(print (list "threat " (cons (operator) (elt links i))) )
+(pushnew (cons (operator) (elt links i)) threats)))
+(incf j)
+)(incf i))))
+
+
   "After hooking up an operator, we have two places that we need to check for threats.
 First, we need to see if the link we just created is threatened by some operator.
 Second, IF we just added in an operator, then we need to check to see if it threatens
@@ -566,16 +586,18 @@ solved plan.  Returns the solved plan, else nil if no solved plan."
                 :start start
                 :goal goal)))
                ; (operator-name (elt (plan-operators plan) 1))
-             (print plan)
-  ; (hook-up-operator (elt (plan-operators plan) 1) (elt (plan-operators plan) 0) (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) plan
-   ;                      10 10 NIL)
+             ;(print plan)
+   (hook-up-operator (elt (plan-operators plan) 0) (elt (plan-operators plan) 1) (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) plan
+                         10 10 NIL)
 
                ;(print (elt (operator-preconditions (elt (plan-operators plan) 1)) 2))
-               ; (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) (elt (plan-operators plan) 1) plan)
+                ;(link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) (elt (plan-operators plan) 1) plan)
                 ;(pick-precond plan)
                 ;(add-operator (copy-operator (elt (plan-operators plan) 1)) plan)
                 ;(all-effects '(t a-on-table) plan)
-                (select-subgoal plan 1 1)
+                ;(select-subgoal plan 1 1)
+             
+                (threats plan (elt *operators* 2) nil)
                 ))
 
 (defun do-pop ()
