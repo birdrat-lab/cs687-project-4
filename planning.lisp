@@ -298,6 +298,7 @@ or before the link, and it's got an effect which counters the link's effect."
   )
 
 (defun pick-precond (plan)
+(print "pick-precond")
  (let* (
   (plan-length (length (plan-operators plan)))
     (i 0)
@@ -305,11 +306,12 @@ or before the link, and it's got an effect which counters the link's effect."
     )
  (loop while (< i plan-length)
   do
+  
   (setf j 0)
-    ;(print (elt (plan-operators plan) i))
     (if (> (length (operator-preconditions (elt (plan-operators plan) i))) 0)
     (loop while (< j (+ 1 plan-length))
     do
+    
    ; (print (elt (operator-preconditions (elt (plan-operators plan) i)) j))
     (if (not (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) i)) j) (elt (plan-operators plan) i) plan))
     (return-from pick-precond (cons (elt (plan-operators plan) i) (elt (operator-preconditions (elt (plan-operators plan) i)) j)))
@@ -375,10 +377,9 @@ an effect that can achieve this precondition."
 
 (defun select-subgoal (plan current-depth max-depth)
 (print "select-subgoal")
-(loop while (pick-precond plan)
-
-do
 (read-line)
+(loop while (pick-precond plan)
+do
 (choose-operator (pick-precond plan) plan current-depth max-depth))
 
   "For all possible subgoals, recursively calls choose-operator
@@ -393,27 +394,29 @@ on those subgoals.  Returns a solved plan, else nil if not solved."
 
 (defun choose-operator (op-precond-pair plan current-depth max-depth)
 ;(print plan)
-
+(print "choose operator")
+(read-line)
 (let* ((completed-plan NIL))
-;  (let* ((operators (all-effects (cdr op-precond-pair) plan))
-;  (i 0))
-;  (if operators
-;    (loop while (and (< i (length operators)) (not completed-plan))
-;      do
-;      (setf completed-plan (hook-up-operator (elt operators i) (car op-precond-pair) (cdr op-precond-pair) plan
-;                         10 10 NIL))
-;      (incf i))))
-
+  (let* ((operators (all-effects (cdr op-precond-pair) plan))
+  (i 0))
+  (if operators
+    (print (list "all effects" "precondition" op-precond-pair "operators" operators))
+    (loop while (and (< i (length operators)) (not completed-plan))
+      do
+      (setf completed-plan (hook-up-operator (elt operators i) (car op-precond-pair) (cdr op-precond-pair) plan
+                         10 10 NIL))
+      (incf i))))
   (let* ((operator NIL)
   (operators (all-operators (cdr op-precond-pair)))
   (i 0))
+  ;(print (list "all-operators" "precondition" op-precond-pair "operators" operators))
   (if operators
     (loop while (and (< i (length operators)) (not completed-plan))
     do
       (setf operator (copy-operator (elt operators i)))
       (setf plan (add-operator operator plan))
-      ;(setf completed-plan (hook-up-operator (elt operators i) (car op-precond-pair) (cdr op-precond-pair) plan
-      ;                   10 10 NIL))
+      (print (list "plan" plan))
+      (read-line)
       (setf completed-plan (hook-up-operator operator (car op-precond-pair) (cdr op-precond-pair) plan
                          10 10 NIL))
       (incf i))))))
@@ -432,7 +435,7 @@ on them.  Returns a solved plan, else nil if not solved."
 
 (defun add-operator (operator plan)
 (setf plan (copy-plan plan))
-(pushnew (list operator) (plan-operators plan))
+(pushnew operator (plan-operators plan))
 ;(print (car (elt (plan-orderings plan) 0)))
 (pushnew (cons (car (elt (plan-orderings plan) 0)) operator) (plan-orderings plan))
 (pushnew (cons operator (cdr (elt (plan-orderings plan) 1))) (plan-orderings plan))
@@ -462,7 +465,10 @@ after start and before goal.  Returns the modified copy of the plan."
 ;(pushnew  (list (make-link :from (elt (plan-operators plan) 1) :precond (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) :to (elt (plan-operators plan) 0))) (plan-links plan) )
 (pushnew  (make-link :from from :precond precondition :to to) (plan-links plan) )
 (pushnew (cons from to) (plan-orderings plan))     
-;(print plan)
+;(threats plan (elt *operators* 3) nil)
+(print "hook-up-operator")
+(print plan)
+(select-subgoal plan 1 1)
   "Hooks up an operator called FROM, adding the links and orderings to the operator
 TO for the given PRECONDITION that FROM achieves for TO.  Then
 recursively  calls resolve-threats to fix any problems.  Presumes that
@@ -481,22 +487,17 @@ plan, else nil if not solved."
 (i 0)
 (j 0)
 (threats (list)))
-;(print maybe-threatening-operator)
-;(print plan)
-;(print (list "links" (length links)))
 (if maybe-threatening-operator
 (loop while (< i (length links))
 do
-
-(loop while (< j (length (operator-effects maybe-threatening-operator)))
-do
-;(print (list (link-precond (elt links i)) (elt (operator-effects maybe-threatening-operator) j)))
-(if (equal (link-precond (elt links i)) (negate (elt (operator-effects maybe-threatening-operator) j)))
-(progn 
-(print (list "threat " (cons (operator) (elt links i))) )
-(pushnew (cons (operator) (elt links i)) threats)))
-(incf j)
-)(incf i))))
+  (loop while (< j (length (operator-effects maybe-threatening-operator)))
+  do
+  ;(print (list (link-precond (elt links i)) (elt (operator-effects maybe-threatening-operator) j)))
+  (if (equal (link-precond (elt links i)) (negate (elt (operator-effects maybe-threatening-operator) j)))
+    (progn 
+    (pushnew (cons maybe-threatening-operator (elt links i)) threats)))
+  (incf j))
+(incf i)))(print threats))
 
 
   "After hooking up an operator, we have two places that we need to check for threats.
@@ -533,6 +534,8 @@ are copies of the original plan."
   )
 
 (defun resolve-threats (plan threats current-depth max-depth)
+
+
   "Tries all combinations of solutions to all the threats in the plan,
 then recursively calls SELECT-SUBGOAL on them until one returns a
 solved plan.  Returns the solved plan, else nil if no solved plan."
@@ -585,10 +588,11 @@ solved plan.  Returns the solved plan, else nil if no solved plan."
                 :links nil
                 :start start
                 :goal goal)))
+                (select-subgoal plan 1 1)
                ; (operator-name (elt (plan-operators plan) 1))
              ;(print plan)
-   (hook-up-operator (elt (plan-operators plan) 0) (elt (plan-operators plan) 1) (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) plan
-                         10 10 NIL)
+                ;(hook-up-operator (elt (plan-operators plan) 0) (elt (plan-operators plan) 1) (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) plan
+                 ;        10 10 NIL)
 
                ;(print (elt (operator-preconditions (elt (plan-operators plan) 1)) 2))
                 ;(link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) (elt (plan-operators plan) 1) plan)
@@ -597,7 +601,7 @@ solved plan.  Returns the solved plan, else nil if no solved plan."
                 ;(all-effects '(t a-on-table) plan)
                 ;(select-subgoal plan 1 1)
              
-                (threats plan (elt *operators* 2) nil)
+                ;(threats plan (elt *operators* 3) nil)
                 ))
 
 (defun do-pop ()
