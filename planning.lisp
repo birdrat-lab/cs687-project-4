@@ -400,12 +400,16 @@ on those subgoals.  Returns a solved plan, else nil if not solved."
   (let* ((operators (all-effects (cdr op-precond-pair) plan))
   (i 0))
   (if operators
-    (print (list "all effects" "precondition" op-precond-pair "operators" operators))
+    (progn
+        (print (list "all effects" "precondition" op-precond-pair "operators" operators))
     (loop while (and (< i (length operators)) (not completed-plan))
       do
       (setf completed-plan (hook-up-operator (elt operators i) (car op-precond-pair) (cdr op-precond-pair) plan
                          10 10 NIL))
-      (incf i))))
+      (incf i))
+    )
+      
+      ))
   (let* ((operator NIL)
   (operators (all-operators (cdr op-precond-pair)))
   (i 0))
