@@ -329,7 +329,7 @@ If there is no such pair, return nil"
   
 
 (defun all-effects (precondition plan)
-(print precondition)
+;(print precondition)
 (let* ((operators (list)))
 (mapcar #'(lambda(x) (let* ((i 0))
 (loop while (< i (length (operator-effects x)))
@@ -374,8 +374,11 @@ an effect that can achieve this precondition."
 
 (defun select-subgoal (plan current-depth max-depth)
 (print "select-subgoal")
-(print (pick-precond plan))
-(choose-operator (pick-precond plan) plan current-depth max-depth)
+(loop while (pick-precond plan)
+
+do
+(read-line)
+(choose-operator (pick-precond plan) plan current-depth max-depth))
 
   "For all possible subgoals, recursively calls choose-operator
 on those subgoals.  Returns a solved plan, else nil if not solved."
@@ -388,14 +391,33 @@ on those subgoals.  Returns a solved plan, else nil if not solved."
 
 
 (defun choose-operator (op-precond-pair plan current-depth max-depth)
-(print (list "choose-operator" op-precond-pair))
+(print plan)
+;(let* ((operators (all-effects (cdr op-precond-pair) plan))
+(let* ((operators (all-operators (cdr op-precond-pair)))
+(i 0))
+(if operators
+(loop while (< i (length operators))
+do
+(hook-up-operator (elt operators i) (car op-precond-pair) (car op-precond-pair) plan
+                         10 10 NIL)
+(incf i)
+)
+)
+)
+;(defun hook-up-operator (from to precondition plan
+;                         current-depth max-depth
+;                         new-operator-was-added)
+;(let* ((operators (all-operators (cdr op-precond-pair))))
+;(print (list "choose-operator" op-precond-pair))
+;(print operators)
+)
 ;(copy-operator operator)
 ;(copy-plan plan)
   "For a given (operator . precondition) pair, recursively call
 hook-up-operator for all possible operators in the plan.  If that
 doesn't work, recursively call add operators and call hook-up-operators
 on them.  Returns a solved plan, else nil if not solved."
-  )
+  
 
 (defun add-operator (operator plan)
 (setf plan (copy-plan plan))
@@ -403,7 +425,7 @@ on them.  Returns a solved plan, else nil if not solved."
 ;(print (car (elt (plan-orderings plan) 0)))
 (pushnew (cons (car (elt (plan-orderings plan) 0)) operator) (plan-orderings plan))
 (pushnew (cons operator (cdr (elt (plan-orderings plan) 1))) (plan-orderings plan))
-(print plan)
+;(print plan)
 
 
 )
@@ -426,6 +448,11 @@ after start and before goal.  Returns the modified copy of the plan."
 (defun hook-up-operator (from to precondition plan
                          current-depth max-depth
                          new-operator-was-added)
+;(pushnew  (list (make-link :from (elt (plan-operators plan) 1) :precond (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) :to (elt (plan-operators plan) 0))) (plan-links plan) )
+(setf plan (copy-plan plan))
+(pushnew  (list (make-link :from from :precond precondition :to to)) (plan-links plan) )
+(pushnew (cons from to) (plan-orderings plan))     
+(print plan)
   "Hooks up an operator called FROM, adding the links and orderings to the operator
 TO for the given PRECONDITION that FROM achieves for TO.  Then
 recursively  calls resolve-threats to fix any problems.  Presumes that
@@ -527,14 +554,16 @@ solved plan.  Returns the solved plan, else nil if no solved plan."
                 :start start
                 :goal goal)))
                ; (operator-name (elt (plan-operators plan) 1))
-             ; (make-link :from (elt (plan-operators plan) 1) :precond (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) :to (elt (plan-operators plan) 0))
-              (setf (plan-links plan) (list (make-link :from (elt (plan-operators plan) 1) :precond (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) :to (elt (plan-operators plan) 0))))
+             
+   ;(hook-up-operator (elt (plan-operators plan) 1) (elt (plan-operators plan) 0) (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) plan
+    ;                     10 10 NIL)
+
                ;(print (elt (operator-preconditions (elt (plan-operators plan) 1)) 2))
                ; (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) (elt (plan-operators plan) 1) plan)
                 ;(pick-precond plan)
                 (add-operator (copy-operator (elt (plan-operators plan) 1)) plan)
                 (all-effects '(t a-on-table) plan)
-                ;(select-subgoal plan 1 1)
+                (select-subgoal plan 1 1)
                 ))
 
 (defun do-pop ()
