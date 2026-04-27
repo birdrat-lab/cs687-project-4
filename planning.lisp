@@ -297,31 +297,43 @@ or before the link, and it's got an effect which counters the link's effect."
   ;; hint: cyclic-assoc-list
   )
 
+;(defun pick-precond (plan)
+;(print "pick-precond")
+; (let* (
+;  (plan-length (length (plan-operators plan)))
+;    (i 0)
+;    (j 0)
+;    )
+; (loop while (< i plan-length)
+;  do
+;  (print (list "i = " i "plan-length " plan-length))
+;  (setf j 0)
+;    (if (> (length (operator-preconditions (elt (plan-operators plan) i))) 0)
+;    (loop while (< j (+ 1 plan-length))
+;    do
+;    (print (list "j = " j "plan-length " plan-length))
+;   ; (print (elt (operator-preconditions (elt (plan-operators plan) i)) j))
+;    (if (not (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) i)) j) (elt (plan-operators plan) i) plan))
+;    (return-from pick-precond (cons (elt (plan-operators plan) i) (elt (operator-preconditions (elt (plan-operators plan) i)) j)))
+;    )
+;    (incf j)))
+;(incf i))
+;)
+;NIL
+;)
+
+
 (defun pick-precond (plan)
 (print "pick-precond")
- (let* (
-  (plan-length (length (plan-operators plan)))
-    (i 0)
-    (j 0)
-    )
- (loop while (< i plan-length)
-  do
-  
-  (setf j 0)
-    (if (> (length (operator-preconditions (elt (plan-operators plan) i))) 0)
-    (loop while (< j (+ 1 plan-length))
-    do
-    
-   ; (print (elt (operator-preconditions (elt (plan-operators plan) i)) j))
-    (if (not (link-exists-for-precondition-p (elt (operator-preconditions (elt (plan-operators plan) i)) j) (elt (plan-operators plan) i) plan))
-    (return-from pick-precond (cons (elt (plan-operators plan) i) (elt (operator-preconditions (elt (plan-operators plan) i)) j)))
-    )
-    (incf j)))
-(incf i))
-)
+
+ (dolist (operators (plan-operators plan))
+  (dolist (preconditions (operator-preconditions operators))
+    (if (not (link-exists-for-precondition-p preconditions operators plan))
+    (progn
+    (print (cons operators preconditions))
+    (return-from pick-precond (cons operators preconditions))))))
 NIL
 )
-
 
   "Return ONE (operator . precondition) pair in the plan that has not been met yet.
 If there is no such pair, return nil"
@@ -333,11 +345,13 @@ If there is no such pair, return nil"
 
 (defun all-effects (precondition plan)
 ;(print precondition)
+
 (let* ((operators (list)))
 (mapcar #'(lambda(x) (let* ((i 0))
+;(print (list "all effects" precondition (operator-effects x)))
 (loop while (< i (length (operator-effects x)))
 do 
-;(print (list precondition (elt (operator-preconditions x) i)))
+;(print (elt (operator-effects x) i))
 (if (equal precondition (elt (operator-effects x) i))
 (progn
 (setf operators (append operators (list x)))
@@ -349,16 +363,19 @@ do
 effects which can achieve this precondition."
   ;; hint: there's short, efficient way to do this, and a long,
   ;; grotesquely inefficient way.  Don't do the inefficient way.
-  
+
 
 (defun all-operators (precondition)
 (let* ((operators (list)))
 (mapcar #'(lambda(x) (let* ((i 0))
-(loop while (< i (length (operator-preconditions x)))
+(loop while (< i (length (operator-effects x)))
 do 
-;(print (list precondition (elt (operator-preconditions x) i)))
+;(print (list x precondition (elt (operator-effects x) i)))
+;(print (list (equal (car precondition) (car (elt (operator-effects x) i))) (equal (cdr precondition) (cdr (elt (operator-effects x) i))))) 
+;(print (and (equal (car precondition) (car (elt (operator-effects x) i))) (equal (cdr precondition) (cdr (elt (operator-effects x) i)))))
 (if (equal precondition (elt (operator-effects x) i))
 (progn
+;(print "found")
 (setf operators (append operators (list x)))
 ))
 (incf i)
@@ -376,7 +393,7 @@ an effect that can achieve this precondition."
   
 
 (defun select-subgoal (plan current-depth max-depth)
-(print "select-subgoal")
+;(print "select-subgoal")
 (read-line)
 (loop while (pick-precond plan)
 do
@@ -393,15 +410,15 @@ on those subgoals.  Returns a solved plan, else nil if not solved."
 
 
 (defun choose-operator (op-precond-pair plan current-depth max-depth)
-;(print plan)
-(print "choose operator")
+
+;(print (list "choose operator" (car op-precond-pair) (cdr op-precond-pair)))
 (read-line)
 (let* ((completed-plan NIL))
   (let* ((operators (all-effects (cdr op-precond-pair) plan))
   (i 0))
   (if operators
     (progn
-        (print (list "all effects" "precondition" op-precond-pair "operators" operators))
+        ;(print (list "all effects" "precondition" op-precond-pair "operators" operators))
     (loop while (and (< i (length operators)) (not completed-plan))
       do
       (setf completed-plan (hook-up-operator (elt operators i) (car op-precond-pair) (cdr op-precond-pair) plan
@@ -419,11 +436,11 @@ on those subgoals.  Returns a solved plan, else nil if not solved."
     do
       (setf operator (copy-operator (elt operators i)))
       (setf plan (add-operator operator plan))
-      (print (list "plan" plan))
+      ;(print (list "plan" plan))
       (read-line)
       (setf completed-plan (hook-up-operator operator (car op-precond-pair) (cdr op-precond-pair) plan
                          10 10 NIL))
-      (incf i))))))
+      (incf i)))))(print "finished"))
 
 ;(let* ((operators (all-operators (cdr op-precond-pair))))
 ;(print (list "choose-operator" op-precond-pair))
@@ -468,10 +485,11 @@ after start and before goal.  Returns the modified copy of the plan."
                          new-operator-was-added)
 ;(pushnew  (list (make-link :from (elt (plan-operators plan) 1) :precond (elt (operator-preconditions (elt (plan-operators plan) 1)) 2) :to (elt (plan-operators plan) 0))) (plan-links plan) )
 (pushnew  (make-link :from from :precond precondition :to to) (plan-links plan) )
-(pushnew (cons from to) (plan-orderings plan))     
+(pushnew (cons from to) (plan-orderings plan))  
+(print plan)   
 ;(threats plan (elt *operators* 3) nil)
-(print "hook-up-operator")
-(print plan)
+;(print "hook-up-operator")
+;(print plan)
 (select-subgoal plan 1 1)
   "Hooks up an operator called FROM, adding the links and orderings to the operator
 TO for the given PRECONDITION that FROM achieves for TO.  Then
