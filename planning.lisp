@@ -324,13 +324,13 @@ or before the link, and it's got an effect which counters the link's effect."
 
 
 (defun pick-precond (plan)
-(print "pick-precond")
+;(print "pick-precond")
 
  (dolist (operators (plan-operators plan))
   (dolist (preconditions (operator-preconditions operators))
     (if (not (link-exists-for-precondition-p preconditions operators plan))
     (progn
-    (print (cons operators preconditions))
+    ;(print (cons operators preconditions))
     (return-from pick-precond (cons operators preconditions))))))
 NIL
 )
@@ -416,6 +416,7 @@ on those subgoals.  Returns a solved plan, else nil if not solved."
 (let* ((completed-plan NIL))
   (let* ((operators (all-effects (cdr op-precond-pair) plan))
   (i 0))
+  ;(print (list "all effect" operators))
   (if operators
     (progn
         ;(print (list "all effects" "precondition" op-precond-pair "operators" operators))
@@ -430,6 +431,7 @@ on those subgoals.  Returns a solved plan, else nil if not solved."
   (let* ((operator NIL)
   (operators (all-operators (cdr op-precond-pair)))
   (i 0))
+  ;  (print (list "all operators" operators))
   ;(print (list "all-operators" "precondition" op-precond-pair "operators" operators))
   (if operators
     (loop while (and (< i (length operators)) (not completed-plan))
