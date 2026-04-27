@@ -507,21 +507,6 @@ plan, else nil if not solved."
   )
 
 (defun threats (plan maybe-threatening-operator maybe-threatened-link)
-(let* ((links (plan-links plan))
-(i 0)
-(j 0)
-(threats (list)))
-(if maybe-threatening-operator
-(loop while (< i (length links))
-do
-  (loop while (< j (length (operator-effects maybe-threatening-operator)))
-  do
-  ;(print (list (link-precond (elt links i)) (elt (operator-effects maybe-threatening-operator) j)))
-  (if (equal (link-precond (elt links i)) (negate (elt (operator-effects maybe-threatening-operator) j)))
-    (progn 
-    (pushnew (cons maybe-threatening-operator (elt links i)) threats)))
-  (incf j))
-(incf i)))(print threats))
 
 
   "After hooking up an operator, we have two places that we need to check for threats.
